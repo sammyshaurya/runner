@@ -3,7 +3,7 @@ const csv = require('csv-parser');
 
 const rows = [];
 
-fs.createReadStream('data.csv')
+fs.createReadStream('dataStore_fixed.csv')
   .pipe(csv())
   .on('data', (row) => rows.push(row))
   .on('end', async () => {
