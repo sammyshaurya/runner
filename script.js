@@ -2,8 +2,7 @@ const fs = require('fs');
 const csv = require('csv-parser');
 
 const FILE_NAME = 'dataStore_fixed.csv';
-const SKIP = 70000; // default skip 70k
-
+const SKIP = 72183;
 const rows = [];
 let count = 0;
 
@@ -13,22 +12,16 @@ fs.createReadStream(FILE_NAME)
   .pipe(csv())
   .on('data', (row) => {
     count++;
-
     if (count <= SKIP) return;
-
     rows.push(row);
   })
   .on('end', async () => {
-    console.log(`Total rows read: ${count}`);
-    console.log(`Skipped: ${SKIP}`);
-    console.log(`Processing: ${rows.length}`);
+    console.log(`Processing ${rows.length} rows...`);
 
     let success = 0;
     let failed = 0;
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-
+    for (const row of rows) {
       const body = {
         value: {
           materialNumber: row["Material Number"],
@@ -64,7 +57,7 @@ fs.createReadStream(FILE_NAME)
             'User-Agent': 'Mozilla/5.0',
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': "Bearer c598a5b7-f64b-412a-bcaf-43712a8a8817", // ✅ from GitHub secret
+            'Authorization': "Bearer c598a5b7-f64b-412a-bcaf-43712a8a8817",
             'current-organization': '2e313d3e-b14f-4a17-a41a-c5e03c5240ee'
           },
           body: JSON.stringify(body)
@@ -72,25 +65,22 @@ fs.createReadStream(FILE_NAME)
 
         if (res.ok) {
           success++;
+          console.log(`${row["Material Code"]} - success`);
         } else {
           failed++;
-          const errText = await res.text();
-          console.error(`❌ ${row["Material Code"]} → ${res.status}`, errText);
+          console.log(`${row["Material Code"]} - failed`);
         }
-
-        console.log(`[#${i + 1}] ${row["Material Code"]} → ${res.status}`);
 
       } catch (err) {
         failed++;
-        console.error(`❌ Error for ${row["Material Code"]}`, err.message);
+        console.log(`${row["Material Code"]} - failed`);
       }
 
-      // ⏱️ prevent rate limit
-      await sleep(100); // 100ms delay
+      await sleep(100);
     }
 
     console.log("\n===== SUMMARY =====");
-    console.log(`✅ Success: ${success}`);
-    console.log(`❌ Failed: ${failed}`);
+    console.log(`success: ${success}`);
+    console.log(`failed: ${failed}`);
     console.log("Done 🚀");
   });
