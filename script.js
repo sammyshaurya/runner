@@ -1,15 +1,34 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 
+const FILE_NAME = 'dataStore_fixed.csv';
+const SKIP = 70000; // default skip 70k
+
 const rows = [];
+let count = 0;
 
-fs.createReadStream('dataStore_fixed.csv')
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+fs.createReadStream(FILE_NAME)
   .pipe(csv())
-  .on('data', (row) => rows.push(row))
-  .on('end', async () => {
-    console.log(`Processing ${rows.length} rows...`);
+  .on('data', (row) => {
+    count++;
 
-    for (const row of rows) {
+    if (count <= SKIP) return;
+
+    rows.push(row);
+  })
+  .on('end', async () => {
+    console.log(`Total rows read: ${count}`);
+    console.log(`Skipped: ${SKIP}`);
+    console.log(`Processing: ${rows.length}`);
+
+    let success = 0;
+    let failed = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+
       const body = {
         value: {
           materialNumber: row["Material Number"],
@@ -45,19 +64,33 @@ fs.createReadStream('dataStore_fixed.csv')
             'User-Agent': 'Mozilla/5.0',
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': "Bearer c598a5b7-f64b-412a-bcaf-43712a8a8817",
+            'Authorization': "Bearer c598a5b7-f64b-412a-bcaf-43712a8a8817", // ✅ from GitHub secret
             'current-organization': '2e313d3e-b14f-4a17-a41a-c5e03c5240ee'
           },
           body: JSON.stringify(body)
         });
 
-        const data = await res.text();
+        if (res.ok) {
+          success++;
+        } else {
+          failed++;
+          const errText = await res.text();
+          console.error(`❌ ${row["Material Code"]} → ${res.status}`, errText);
+        }
 
-        console.log(`✅ ${row["Material Code"]} → ${res.status}`);
+        console.log(`[#${i + 1}] ${row["Material Code"]} → ${res.status}`);
+
       } catch (err) {
-        console.error(`❌ Error for ${row["Material Code"]}`, err);
+        failed++;
+        console.error(`❌ Error for ${row["Material Code"]}`, err.message);
       }
+
+      // ⏱️ prevent rate limit
+      await sleep(100); // 100ms delay
     }
 
+    console.log("\n===== SUMMARY =====");
+    console.log(`✅ Success: ${success}`);
+    console.log(`❌ Failed: ${failed}`);
     console.log("Done 🚀");
   });
