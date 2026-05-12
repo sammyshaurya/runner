@@ -2,7 +2,7 @@ const fs = require('fs');
 const csv = require('csv-parser');
 
 const FILE_NAME = 'dataStore_fixed.csv';
-const SKIP = 152183;
+const SKIP = 178183;
 const rows = [];
 let count = 0;
 
