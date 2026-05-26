@@ -57,7 +57,7 @@ fs.createReadStream(FILE_NAME)
             'User-Agent': 'Mozilla/5.0',
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': "Bearer c598a5b7-f64b-412a-bcaf-43712a8a8817",
+            'Authorization': "Bearer 6eca9f65-ba6f-47b4-8337-aab48ef7ec30",
             'current-organization': '2e313d3e-b14f-4a17-a41a-c5e03c5240ee'
           },
           body: JSON.stringify(body)
